@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Safety Champion Hub</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    button { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased min-h-screen pb-16 overflow-x-hidden">
+
+  <!-- ===================================================================== -->
+  <!-- DISMISSIBLE FIREBASE CONFIG BANNER                                    -->
+  <!-- ===================================================================== -->
+  <div id="config-banner" class="hidden bg-amber-50 border-b border-amber-200 text-amber-950" role="region" aria-label="Firebase setup reminder">
+    <div class="max-w-3xl mx-auto px-3 sm:px-4 py-2.5 flex items-start sm:items-center justify-between gap-3">
+      <div class="flex items-start sm:items-center gap-2 text-xs leading-snug">
+        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+        <span><strong>Firebase setup needed:</strong> Paste your <code class="px-1 py-0.5 rounded bg-amber-200/70 font-mono text-[11px]">firebaseConfig</code> at the top of the script. Running in local/memory mode for now.</span>
+      </div>
+      <button id="btn-dismiss-banner" type="button" class="p-1 rounded-lg text-amber-700 hover:bg-amber-200/60 active:scale-95 transition shrink-0" aria-label="Dismiss">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- STICKY TOP HEADER: UNIFIED HUB NAV + CONTEXTUAL CONTROLS              -->
+  <!-- ===================================================================== -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-3xl mx-auto px-3 sm:px-4 pt-3 pb-2.5 space-y-2.5">
+
+      <!-- Top Title Row, Cloud Sync Status Pill & Stow Action Buttons -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center shrink-0 shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h1 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight truncate">Safety Champion Hub</h1>
+              <span id="sync-status-pill" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-800 border-amber-200 shrink-0">
+                <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                <span id="sync-status-text">Config Needed</span>
+              </span>
+            </div>
+            <p id="hub-subtitle" class="text-[11px] sm:text-xs text-slate-500 font-medium truncate">
+              Stow Cart &amp; Jiffy Bin Audit (Clusters G &rarr; A)
+            </p>
+          </div>
+        </div>
+
+        <!-- Stow Header Action Buttons -->
+        <div id="stow-header-actions" class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button id="btn-copy-summary" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 active:scale-95 border border-slate-900 shadow-sm transition">
+            <svg id="copy-icon-default" class="w-3.5 h-3.5 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+            </svg>
+            <svg id="copy-icon-check" class="w-3.5 h-3.5 shrink-0 hidden text-white" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span id="copy-btn-label" class="hidden sm:inline">Copy Summary</span>
+            <span id="copy-btn-label-sm" class="sm:hidden">Copy</span>
+          </button>
+
+          <button id="btn-reset-shift" type="button" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 active:scale-95 border border-rose-200 transition">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            <span class="hidden sm:inline">Reset Shift</span>
+            <span class="sm:hidden">Reset</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- UNIFIED HUB TAB SWITCHER -->
+      <nav class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar" aria-label="Safety Hub Sections">
+        <button type="button" data-hub-tab="tab-stow" class="hub-tab-btn flex-1 min-w-[115px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 bg-slate-900 text-white shadow-sm">
+          <span>Stow &amp; Jiffy</span>
+          <span id="tab-badge-stow" class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-400 text-slate-950">0%</span>
+        </button>
+
+        <button type="button" data-hub-tab="tab-shoutouts" class="hub-tab-btn flex-1 min-w-[115px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 text-slate-600 hover:bg-slate-200/70">
+          <span>Shoutouts</span>
+          <span id="tab-badge-shoutouts" class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-200 text-slate-700">0</span>
+        </button>
+
+        <button type="button" data-hub-tab="tab-ppe" class="hub-tab-btn flex-1 min-w-[115px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 text-slate-600 hover:bg-slate-200/70">
+          <span>Jacket PPE</span>
+          <span id="tab-badge-ppe" class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-200 text-slate-700">0</span>
+        </button>
+      </nav>
+
+      <!-- STOW-ONLY STICKY DASHBOARD & FILTERS -->
+      <div id="stow-header-controls" class="space-y-2.5">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="rounded-xl bg-emerald-50 border border-emerald-200/80 px-2.5 py-2 flex flex-col justify-between">
+            <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Req. Compliant</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="stat-compliant" class="text-lg sm:text-xl font-extrabold text-emerald-700 leading-none">0</span>
+              <span id="stat-required-total" class="text-xs font-semibold text-emerald-600/80">/ 60</span>
+              <span id="stat-compliant-pct" class="ml-auto text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md leading-none">0%</span>
+            </div>
+          </div>
+          <div class="rounded-xl bg-rose-50 border border-rose-200/80 px-2.5 py-2 flex flex-col justify-between">
+            <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-rose-800">Missing Carts</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="stat-missing-carts" class="text-lg sm:text-xl font-extrabold text-rose-700 leading-none">60</span>
+              <span class="text-[11px] font-medium text-rose-600/80">req.</span>
+            </div>
+          </div>
+          <div class="rounded-xl bg-amber-50 border border-amber-200/90 px-2.5 py-2 flex flex-col justify-between">
+            <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-amber-800">Missing Bins</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="stat-missing-bins" class="text-lg sm:text-xl font-extrabold text-amber-700 leading-none">0</span>
+              <span class="text-[11px] font-medium text-amber-700/80">w/ cart</span>
+            </div>
+          </div>
+          <div class="rounded-xl bg-sky-50 border border-sky-200/80 px-2.5 py-2 flex flex-col justify-between">
+            <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-sky-800">P2B Extra Carts</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="stat-p2b-carts" class="text-lg sm:text-xl font-extrabold text-sky-700 leading-none">0</span>
+              <span class="text-[11px] font-medium text-sky-600/80">in B &amp; A</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+          <div id="compliance-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pt-0.5">
+          <div id="cluster-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full sm:w-auto"></div>
+          <button id="btn-missing-only" type="button" aria-pressed="false" class="shrink-0 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <span>Missing Only</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN CONTENT: TAB PANELS                                              -->
+  <!-- ===================================================================== -->
+  <main class="max-w-3xl mx-auto px-3 sm:px-4 pt-3.5">
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: STOW CART & JIFFY BIN TRACKER                                -->
+    <!-- =================================================================== -->
+    <section id="tab-stow" class="hub-panel space-y-3.5">
+      <div id="clusters-container" class="space-y-3.5"></div>
+
+      <div id="empty-state" class="hidden rounded-2xl bg-white border border-slate-200 p-8 text-center shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="text-base font-extrabold text-slate-900">All Caught Up!</h3>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">No aisles match your current filter criteria.</p>
+        <button id="btn-clear-filters" type="button" class="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition">Show All Aisles</button>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: SAFE ASSOCIATE RECOGNITION (SHOUTOUTS)                       -->
+    <!-- =================================================================== -->
+    <section id="tab-shoutouts" class="hub-panel hidden space-y-3.5">
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-4 space-y-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm sm:text-base font-extrabold text-slate-900">Log Safe Behavior</h2>
+            <p class="text-[11px] text-slate-500 font-medium">Quick-tap capture for solo floor walks</p>
+          </div>
+          <span id="so-phase-badge" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">Auto Phase</span>
+        </div>
+
+        <div>
+          <label for="so-associate" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Associate Login or Name</label>
+          <input type="text" id="so-associate" list="associate-suggestions" autocomplete="off" placeholder="e.g., jdoe or Jordan D." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900" />
+          <datalist id="associate-suggestions"></datalist>
+        </div>
+
+        <div>
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Safe Behaviors (Tap all that apply)</span>
+          <div id="so-behavior-chips" class="flex flex-wrap gap-2">
+            <button type="button" data-behavior="Go-Cart Brakes" class="so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition">Go-Cart Brakes</button>
+            <button type="button" data-behavior="Clean Dock" class="so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition">Clean Dock</button>
+            <button type="button" data-behavior="PPE Compliant" class="so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition">PPE Compliant</button>
+            <button type="button" data-behavior="Clean Aisle / Egress" class="so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition">Clean Aisle / Egress</button>
+            <button type="button" data-behavior="Safe Ergonomics" class="so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition">Safe Ergonomics</button>
+            <button type="button" data-behavior="Hazard Callout" class="so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition">Hazard Callout</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label for="so-zone" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Floor Zone</label>
+            <select id="so-zone" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900">
+              <option value="Dock Area">Dock Area</option>
+              <option value="Aisles G-A">Aisles G–A</option>
+              <option value="Pick & Stage">Pick &amp; Stage</option>
+              <option value="Conveyor / Diverter">Conveyor / Diverter</option>
+            </select>
+          </div>
+          <div>
+            <label for="so-phase" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Shift Phase</label>
+            <select id="so-phase" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900">
+              <option value="Stow P1">Stow P1 (1:20–4:00 AM)</option>
+              <option value="Stow P2">Stow P2 (4:00–6:30 AM)</option>
+              <option value="Stow P3">Stow P3 (6:30–9:00 AM)</option>
+              <option value="Pick & Stage">Pick &amp; Stage (9:00–11:50 AM)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="so-note" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Quick Note (Optional)</label>
+          <input type="text" id="so-note" placeholder="e.g., Double-checked 3 Go-Carts before staging" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900" />
+        </div>
+
+        <button id="btn-save-shoutout" type="button" class="w-full min-h-[46px] px-4 py-3 rounded-xl text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] shadow-sm transition">
+          + Save Safe Recognition
+        </button>
+      </div>
+
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-slate-800 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-extrabold">Tonight's Recognitions</h3>
+            <p class="text-[11px] text-slate-300 font-medium"><span id="so-total-count">0</span> logged this shift</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-copy-so-slack" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 active:scale-95 transition">Copy Slack/Chime</button>
+            <button id="btn-copy-so-whs" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/15 text-white hover:bg-white/25 active:scale-95 transition">Copy WHS</button>
+          </div>
+        </div>
+        <div id="so-log-list" class="divide-y divide-slate-100"></div>
+        <div id="so-empty-state" class="p-8 text-center">
+          <p class="text-xs sm:text-sm font-bold text-slate-700">No recognitions logged yet tonight.</p>
+          <p class="text-xs text-slate-500 mt-1">Catch someone locking Go-Cart brakes or keeping the dock clean and log it above.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: COLD WEATHER & RAIN JACKET PPE TRACKER                       -->
+    <!-- =================================================================== -->
+    <section id="tab-ppe" class="hub-panel hidden space-y-3.5">
+
+      <!-- PPE Summary Metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="rounded-xl bg-sky-50 border border-sky-200 px-3 py-2.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-sky-800">Cold Avail.</span>
+          <div class="flex items-baseline gap-1 mt-0.5">
+            <span id="ppe-stat-cold-avail" class="text-xl font-extrabold text-sky-700 leading-none">0</span>
+            <span id="ppe-stat-cold-total" class="text-xs font-semibold text-sky-600/80">/ 0</span>
+          </div>
+        </div>
+        <div class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-2.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-800">Rain Avail.</span>
+          <div class="flex items-baseline gap-1 mt-0.5">
+            <span id="ppe-stat-rain-avail" class="text-xl font-extrabold text-indigo-700 leading-none">0</span>
+            <span id="ppe-stat-rain-total" class="text-xs font-semibold text-indigo-600/80">/ 0</span>
+          </div>
+        </div>
+        <div class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800">Out Tonight</span>
+          <div class="flex items-baseline gap-1 mt-0.5">
+            <span id="ppe-stat-out" class="text-xl font-extrabold text-amber-700 leading-none">0</span>
+            <span class="text-[11px] font-medium text-amber-700/80">active</span>
+          </div>
+        </div>
+        <div class="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-rose-800">Follow-Ups</span>
+          <div class="flex items-baseline gap-1 mt-0.5">
+            <span id="ppe-stat-followups" class="text-xl font-extrabold text-rose-700 leading-none">0</span>
+            <span class="text-[11px] font-medium text-rose-600/80">open</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERSISTENT OPEN FOLLOW-UP TASKS (Shown prominently when > 0) -->
+      <div id="ppe-followup-card" class="hidden rounded-2xl bg-white border-2 border-rose-300 shadow-sm overflow-hidden">
+        <div class="bg-rose-700 text-white px-4 py-2.5 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-rose-200 shrink-0" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <h3 class="text-sm font-extrabold">Open Follow-Up Tasks (<span id="ppe-followup-count">0</span>)</h3>
+          </div>
+          <span class="text-[11px] font-semibold text-rose-100">Unreturned from past shifts</span>
+        </div>
+        <div id="ppe-followup-list" class="divide-y divide-rose-100"></div>
+      </div>
+
+      <!-- QUICK JACKET CHECKOUT CARD -->
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-4 space-y-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm sm:text-base font-extrabold text-slate-900">Issue Jacket (Load-Out / Yard)</h2>
+            <p class="text-[11px] text-slate-500 font-medium">Scan/enter login, pick jacket &amp; size</p>
+          </div>
+        </div>
+
+        <!-- Repeat-Offender Warning Banner -->
+        <div id="ppe-repeat-warning" class="hidden rounded-xl bg-rose-50 border border-rose-300 px-3 py-2 text-xs text-rose-900 font-semibold"></div>
+
+        <!-- Associate Login + Optional Tag # -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="sm:col-span-2">
+            <label for="ppe-associate" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Associate Login or Name</label>
+            <input type="text" id="ppe-associate" list="associate-suggestions" autocomplete="off" placeholder="Scan badge or type login (e.g., jdoe)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900" />
+          </div>
+          <div>
+            <label for="ppe-tag" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Tag / Asset # (Opt.)</label>
+            <input type="text" id="ppe-tag" autocomplete="off" placeholder="e.g., #14" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900" />
+          </div>
+        </div>
+
+        <!-- Jacket Type Selector -->
+        <div>
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Jacket Type</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" data-ppe-type="cold" class="ppe-type-btn min-h-[42px] px-3 py-2 rounded-xl text-xs font-extrabold border transition active:scale-95 bg-sky-700 text-white border-sky-800 shadow-sm">
+              Cold Weather Jacket
+            </button>
+            <button type="button" data-ppe-type="rain" class="ppe-type-btn min-h-[42px] px-3 py-2 rounded-xl text-xs font-extrabold border transition active:scale-95 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100">
+              Rain Jacket
+            </button>
+          </div>
+        </div>
+
+        <!-- Size Quick-Tap Pills (Shows Live Available Count) -->
+        <div>
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Select Size (Available Count)</span>
+          <div id="ppe-size-pills" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
+        </div>
+
+        <button id="btn-ppe-checkout" type="button" class="w-full min-h-[46px] px-4 py-3 rounded-xl text-sm font-extrabold text-white bg-slate-900 hover:bg-slate-800 active:scale-[0.99] shadow-sm transition">
+          + Check Out Jacket
+        </button>
+      </div>
+
+      <!-- ACTIVE SHIFT CHECKOUTS CARD -->
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-slate-800 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-extrabold">Checked Out This Shift</h3>
+            <p class="text-[11px] text-slate-300 font-medium"><span id="ppe-active-count">0</span> currently out &bull; <span id="ppe-returned-count">0</span> returned today</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-ppe-copy" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 active:scale-95 transition">Copy Summary</button>
+            <button id="btn-ppe-end-shift" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 active:scale-95 transition">End Shift &amp; Flag</button>
+          </div>
+        </div>
+
+        <div id="ppe-active-list" class="divide-y divide-slate-100"></div>
+        <div id="ppe-active-empty" class="p-6 text-center">
+          <p class="text-xs font-bold text-slate-700">No jackets currently checked out.</p>
+        </div>
+      </div>
+
+      <!-- COLLAPSIBLE INVENTORY & LAUNDRY MANAGER -->
+      <div class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <button id="btn-toggle-inv" type="button" class="w-full bg-slate-50 hover:bg-slate-100 px-4 py-3 flex items-center justify-between gap-2 text-left transition">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Manage Total Inventory &amp; Laundry</h3>
+            <p class="text-[11px] text-slate-500 font-medium">Adjust total jacket stock by size or clear washed/repaired items</p>
+          </div>
+          <svg id="inv-chevron" class="w-5 h-5 text-slate-500 transition-transform -rotate-90" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+        <div id="ppe-inventory-panel" class="hidden p-4 border-t border-slate-200 space-y-4">
+          <div id="ppe-inventory-grid" class="space-y-4"></div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- RESET SHIFT CONFIRMATION MODAL                                        -->
+  <!-- ===================================================================== -->
+  <div id="reset-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900">Reset Entire Shift?</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed">This clears all Cart, Jiffy Bin, and Declined statuses across Clusters G &rarr; A for a fresh shift. You can tap Undo right after if needed.</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button id="btn-cancel-reset" type="button" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 transition">Cancel</button>
+        <button id="btn-confirm-reset" type="button" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-sm transition">Yes, Reset Shift</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- FALLBACK COPY SUMMARY MODAL                                           -->
+  <!-- ===================================================================== -->
+  <div id="summary-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-5 space-y-3.5">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-base font-extrabold text-slate-900">Shift Summary</h3>
+        <button id="btn-close-summary-x" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <p class="text-xs text-slate-500">Tap <strong>Select All</strong> and copy this summary to paste into Slack or Chime:</p>
+      <textarea id="summary-textarea" readonly rows="8" class="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+      <div class="flex items-center justify-end gap-2">
+        <button id="btn-select-summary" type="button" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 transition">Select All</button>
+        <button id="btn-close-summary" type="button" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 active:scale-95 transition">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- TOAST NOTIFICATION                                                    -->
+  <!-- ===================================================================== -->
+  <div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-lg border border-slate-700 max-w-[92vw]" role="status" aria-live="polite">
+    <span id="toast-message" class="truncate"></span>
+    <button id="toast-undo" type="button" class="hidden shrink-0 px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold hover:bg-amber-300 active:scale-95 transition">Undo</button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC (Firebase v11 Modular SDK + Firestore Persistence)  -->
+  <!-- ===================================================================== -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+    import {
+      getFirestore,
+      doc,
+      collection,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      setDoc,
+    } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+
+    // =======================================================================
+    // FIREBASE CONFIG (stow-cart-tracker)
+    // =======================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyArPp22reTZHMaftiXIJuZ6OAQqWnGeMpc",
+      authDomain: "stow-cart-tracker.firebaseapp.com",
+      projectId: "stow-cart-tracker",
+      storageBucket: "stow-cart-tracker.firebasestorage.app",
+      messagingSenderId: "261343958739",
+      appId: "1:261343958739:web:8c4225889ac5b283942626"
+    };
+
+    // -----------------------------------------------------------------------
+    // 1. CONSTANTS & DEFAULT CONFIGS
+    // -----------------------------------------------------------------------
+    const CLUSTERS = [
+      { id: 'G', racks: 32, required: true },
+      { id: 'E', racks: 32, required: true },
+      { id: 'D', racks: 28, required: true },
+      { id: 'C', racks: 28, required: true },
+      { id: 'B', racks: 28, required: false },
+      { id: 'A', racks: 26, required: false },
+    ];
+
+    const PPE_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+    const DEFAULT_PPE_INVENTORY = {
+      cold: {
+        S: { total: 2, wash: 0 }, M: { total: 5, wash: 0 }, L: { total: 8, wash: 0 },
+        XL: { total: 8, wash: 0 }, '2XL': { total: 5, wash: 0 }, '3XL': { total: 2, wash: 0 },
+      },
+      rain: {
+        S: { total: 2, wash: 0 }, M: { total: 5, wash: 0 }, L: { total: 8, wash: 0 },
+        XL: { total: 8, wash: 0 }, '2XL': { total: 5, wash: 0 }, '3XL': { total: 2, wash: 0 },
+      },
+    };
+
+    const STORAGE_KEY = 'safety_champion_stow_cart_tracker_v1';
+
+    CLUSTERS.forEach((cluster) => {
+      cluster.aisles = [];
+      for (let r = 1; r <= cluster.racks; r += 2) {
+        const pairLabel = `${r}/${r + 1}`;
+        cluster.aisles.push({
+          key: `${cluster.id}-${r}-${r + 1}`,
+          clusterId: cluster.id,
+          label: `${cluster.id}-${pairLabel}`,
+          pairLabel,
+          required: cluster.required,
+        });
+      }
+    });
+
+    // -----------------------------------------------------------------------
+    // 2. APPLICATION STATE
+    // -----------------------------------------------------------------------
+    let state = {
+      activeTab: 'tab-stow',
+      aisles: {},
+      collapsed: {},
+      activeCluster: 'ALL',
+      missingOnly: false,
+      recognitions: [],
+      knownAssociates: [],
+      ppeInventory: JSON.parse(JSON.stringify(DEFAULT_PPE_INVENTORY)),
+      ppeCheckouts: [],
+      selectedPpeType: 'cold',
+      selectedPpeSize: 'L',
+    };
+
+    let previousAislesSnapshot = null;
+    let toastTimeout = null;
+
+    const isFirebaseConfigured = Boolean(firebaseConfig.apiKey) && firebaseConfig.apiKey !== 'YOUR_API_KEY';
+    let db = null;
+    let shiftDocRef = null;
+    let recognitionsColRef = null;
+    let ppeInvDocRef = null;
+    let ppeCheckoutsColRef = null;
+    let pendingWrites = 0;
+
+    // -----------------------------------------------------------------------
+    // 3. DOM REFERENCES
+    // -----------------------------------------------------------------------
+    const elConfigBanner = document.getElementById('config-banner');
+    const elBtnDismissBanner = document.getElementById('btn-dismiss-banner');
+    const elSyncStatusPill = document.getElementById('sync-status-pill');
+    const elSyncStatusDot = document.getElementById('sync-status-dot');
+    const elSyncStatusText = document.getElementById('sync-status-text');
+    const elHubSubtitle = document.getElementById('hub-subtitle');
+    const elStowHeaderActions = document.getElementById('stow-header-actions');
+    const elStowHeaderControls = document.getElementById('stow-header-controls');
+    const elTabBadgeStow = document.getElementById('tab-badge-stow');
+    const elTabBadgeShoutouts = document.getElementById('tab-badge-shoutouts');
+    const elTabBadgePpe = document.getElementById('tab-badge-ppe');
+    const elAssociateSuggestions = document.getElementById('associate-suggestions');
+
+    // Stow DOM
+    const elStatCompliant = document.getElementById('stat-compliant');
+    const elStatRequiredTotal = document.getElementById('stat-required-total');
+    const elStatCompliantPct = document.getElementById('stat-compliant-pct');
+    const elStatMissingCarts = document.getElementById('stat-missing-carts');
+    const elStatMissingBins = document.getElementById('stat-missing-bins');
+    const elStatP2bCarts = document.getElementById('stat-p2b-carts');
+    const elComplianceBar = document.getElementById('compliance-bar');
+    const elClusterPills = document.getElementById('cluster-pills');
+    const elBtnMissingOnly = document.getElementById('btn-missing-only');
+    const elClustersContainer = document.getElementById('clusters-container');
+    const elEmptyState = document.getElementById('empty-state');
+    const elBtnClearFilters = document.getElementById('btn-clear-filters');
+    const elBtnCopySummary = document.getElementById('btn-copy-summary');
+    const elCopyIconDefault = document.getElementById('copy-icon-default');
+    const elCopyIconCheck = document.getElementById('copy-icon-check');
+    const elCopyBtnLabel = document.getElementById('copy-btn-label');
+    const elCopyBtnLabelSm = document.getElementById('copy-btn-label-sm');
+    const elBtnResetShift = document.getElementById('btn-reset-shift');
+
+    // Shoutouts DOM
+    const elSoAssociate = document.getElementById('so-associate');
+    const elSoBehaviorChips = document.getElementById('so-behavior-chips');
+    const elSoZone = document.getElementById('so-zone');
+    const elSoPhase = document.getElementById('so-phase');
+    const elSoPhaseBadge = document.getElementById('so-phase-badge');
+    const elSoNote = document.getElementById('so-note');
+    const elBtnSaveShoutout = document.getElementById('btn-save-shoutout');
+    const elSoTotalCount = document.getElementById('so-total-count');
+    const elSoLogList = document.getElementById('so-log-list');
+    const elSoEmptyState = document.getElementById('so-empty-state');
+    const elBtnCopySoSlack = document.getElementById('btn-copy-so-slack');
+    const elBtnCopySoWhs = document.getElementById('btn-copy-so-whs');
+
+    // PPE DOM
+    const elPpeStatColdAvail = document.getElementById('ppe-stat-cold-avail');
+    const elPpeStatColdTotal = document.getElementById('ppe-stat-cold-total');
+    const elPpeStatRainAvail = document.getElementById('ppe-stat-rain-avail');
+    const elPpeStatRainTotal = document.getElementById('ppe-stat-rain-total');
+    const elPpeStatOut = document.getElementById('ppe-stat-out');
+    const elPpeStatFollowups = document.getElementById('ppe-stat-followups');
+    const elPpeFollowupCard = document.getElementById('ppe-followup-card');
+    const elPpeFollowupCount = document.getElementById('ppe-followup-count');
+    const elPpeFollowupList = document.getElementById('ppe-followup-list');
+    const elPpeRepeatWarning = document.getElementById('ppe-repeat-warning');
+    const elPpeAssociate = document.getElementById('ppe-associate');
+    const elPpeTag = document.getElementById('ppe-tag');
+    const elPpeSizePills = document.getElementById('ppe-size-pills');
+    const elBtnPpeCheckout = document.getElementById('btn-ppe-checkout');
+    const elPpeActiveCount = document.getElementById('ppe-active-count');
+    const elPpeReturnedCount = document.getElementById('ppe-returned-count');
+    const elPpeActiveList = document.getElementById('ppe-active-list');
+    const elPpeActiveEmpty = document.getElementById('ppe-active-empty');
+    const elBtnPpeCopy = document.getElementById('btn-ppe-copy');
+    const elBtnPpeEndShift = document.getElementById('btn-ppe-end-shift');
+    const elBtnToggleInv = document.getElementById('btn-toggle-inv');
+    const elInvChevron = document.getElementById('inv-chevron');
+    const elPpeInvPanel = document.getElementById('ppe-inventory-panel');
+    const elPpeInvGrid = document.getElementById('ppe-inventory-grid');
+
+    // Modals & Toast DOM
+    const elResetModal = document.getElementById('reset-modal');
+    const elBtnCancelReset = document.getElementById('btn-cancel-reset');
+    const elBtnConfirmReset = document.getElementById('btn-confirm-reset');
+    const elSummaryModal = document.getElementById('summary-modal');
+    const elSummaryTextarea = document.getElementById('summary-textarea');
+    const elBtnSelectSummary = document.getElementById('btn-select-summary');
+    const elBtnCloseSummary = document.getElementById('btn-close-summary');
+    const elBtnCloseSummaryX = document.getElementById('btn-close-summary-x');
+    const elToast = document.getElementById('toast');
+    const elToastMessage = document.getElementById('toast-message');
+    const elToastUndo = document.getElementById('toast-undo');
+
+    // -----------------------------------------------------------------------
+    // 4. SHARED HELPERS & TAB SWITCHING
+    // -----------------------------------------------------------------------
+    function getShiftDateKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    function detectCurrentPhase() {
+      const now = new Date();
+      const mins = now.getHours() * 60 + now.getMinutes();
+      if (mins < 240) return 'Stow P1';
+      if (mins < 390) return 'Stow P2';
+      if (mins < 540) return 'Stow P3';
+      return 'Pick & Stage';
+    }
+
+    function syncAutoPhaseUI() {
+      const phase = detectCurrentPhase();
+      elSoPhase.value = phase;
+      elSoPhaseBadge.textContent = phase;
+    }
+
+    function refreshAssociateAutocomplete() {
+      const names = new Set(state.knownAssociates);
+      state.ppeCheckouts.forEach((c) => { if (c.associate) names.add(c.associate); });
+      elAssociateSuggestions.innerHTML = [...names].sort().map((n) => `<option value="${n}"></option>`).join('');
+    }
+
+    function switchHubTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.hub-panel').forEach((panel) => {
+        panel.classList.toggle('hidden', panel.id !== tabId);
+      });
+
+      document.querySelectorAll('.hub-tab-btn').forEach((btn) => {
+        const isTarget = btn.getAttribute('data-hub-tab') === tabId;
+        btn.className = isTarget
+          ? 'hub-tab-btn flex-1 min-w-[115px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 bg-slate-900 text-white shadow-sm'
+          : 'hub-tab-btn flex-1 min-w-[115px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 text-slate-600 hover:bg-slate-200/70';
+      });
+
+      const isStow = tabId === 'tab-stow';
+      elStowHeaderActions.classList.toggle('hidden', !isStow);
+      elStowHeaderControls.classList.toggle('hidden', !isStow);
+
+      if (tabId === 'tab-stow') {
+        elHubSubtitle.textContent = 'Stow Cart & Jiffy Bin Audit (Clusters G → A)';
+      } else if (tabId === 'tab-shoutouts') {
+        elHubSubtitle.textContent = 'Positive Safety Recognition & WHS Engagements';
+        syncAutoPhaseUI();
+      } else {
+        elHubSubtitle.textContent = 'Cold Weather & Rain Jacket Inventory & Follow-Ups';
+        renderPpeAll();
+      }
+    }
+
+    document.querySelectorAll('.hub-tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => switchHubTab(btn.getAttribute('data-hub-tab')));
+    });
+
+    function showToast(message, allowUndo = false) {
+      if (toastTimeout) clearTimeout(toastTimeout);
+      elToastMessage.textContent = message;
+      elToastUndo.classList.toggle('hidden', !allowUndo);
+      elToast.classList.remove('hidden');
+      elToast.classList.add('flex');
+      toastTimeout = setTimeout(() => {
+        elToast.classList.add('hidden');
+        elToast.classList.remove('flex');
+      }, 4000);
+    }
+
+    async function copyTextToClipboard(text) {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try { await navigator.clipboard.writeText(text); return true; } catch (err) {}
+      }
+      try {
+        const tempArea = document.createElement('textarea');
+        tempArea.value = text;
+        tempArea.setAttribute('readonly', '');
+        tempArea.style.position = 'fixed';
+        tempArea.style.top = '-9999px';
+        document.body.appendChild(tempArea);
+        tempArea.focus();
+        tempArea.select();
+        const succeeded = document.execCommand('copy');
+        document.body.removeChild(tempArea);
+        return Boolean(succeeded);
+      } catch (err) { return false; }
+    }
+
+    function openSummaryModal(text) {
+      elSummaryTextarea.value = text;
+      elSummaryModal.classList.remove('hidden');
+      elSummaryModal.classList.add('flex');
+      setTimeout(() => { elSummaryTextarea.focus(); elSummaryTextarea.select(); }, 50);
+    }
+
+    function closeSummaryModal() {
+      elSummaryModal.classList.add('hidden');
+      elSummaryModal.classList.remove('flex');
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. FIREBASE SYNC & STORAGE
+    // -----------------------------------------------------------------------
+    function setSyncStatus(mode, tooltip = '') {
+      const styles = {
+        saved: { pill: 'bg-emerald-50 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500', text: 'Cloud Saved' },
+        saving: { pill: 'bg-blue-50 text-blue-800 border-blue-200', dot: 'bg-blue-500 animate-pulse', text: 'Saving...' },
+        config: { pill: 'bg-amber-50 text-amber-800 border-amber-200', dot: 'bg-amber-500', text: 'Config Needed' },
+        error: { pill: 'bg-rose-50 text-rose-800 border-rose-200', dot: 'bg-rose-500', text: 'Sync Error' },
+      };
+      const cfg = styles[mode] || styles.config;
+      elSyncStatusPill.className = `inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${cfg.pill}`;
+      elSyncStatusDot.className = `w-1.5 h-1.5 rounded-full ${cfg.dot}`;
+      elSyncStatusText.textContent = cfg.text;
+      if (tooltip) elSyncStatusPill.setAttribute('title', tooltip);
+    }
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            if (!isFirebaseConfigured && parsed.aisles) state.aisles = parsed.aisles;
+            if (parsed.collapsed) state.collapsed = parsed.collapsed;
+          }
+        }
+      } catch (err) {}
+    }
+
+    function saveLocalState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ aisles: state.aisles, collapsed: state.collapsed }));
+      } catch (err) {}
+    }
+
+    async function saveState(syncAislesToCloud = true) {
+      saveLocalState();
+      if (!syncAislesToCloud || !shiftDocRef) return;
+      pendingWrites++;
+      setSyncStatus('saving', 'Saving to Firestore...');
+      try {
+        await setDoc(shiftDocRef, { aisles: state.aisles, updatedAt: new Date().toISOString() }, { merge: false });
+        pendingWrites = Math.max(0, pendingWrites - 1);
+        if (pendingWrites === 0) setSyncStatus('saved', 'Synced with Firestore');
+      } catch (err) {
+        pendingWrites = Math.max(0, pendingWrites - 1);
+        setSyncStatus('error', 'Firestore write failed');
+        showToast('Cloud sync error — check Firestore rules', false);
+      }
+    }
+
+    async function savePpeInventoryToCloud() {
+      if (!ppeInvDocRef) return;
+      pendingWrites++;
+      setSyncStatus('saving', 'Saving PPE inventory...');
+      try {
+        await setDoc(ppeInvDocRef, { ...state.ppeInventory, updatedAt: new Date().toISOString() }, { merge: false });
+        pendingWrites = Math.max(0, pendingWrites - 1);
+        if (pendingWrites === 0) setSyncStatus('saved', 'Synced with Firestore');
+      } catch (err) {
+        pendingWrites = Math.max(0, pendingWrites - 1);
+        setSyncStatus('error', 'PPE inventory sync failed');
+        showToast('Could not save PPE inventory — check Firestore rules', false);
+      }
+    }
+
+    function initFirebaseSync() {
+      if (!isFirebaseConfigured) {
+        setSyncStatus('config', 'Paste firebaseConfig to enable cloud persistence');
+        elConfigBanner.classList.remove('hidden');
+        return;
+      }
+
+      setSyncStatus('saving', 'Connecting to Firestore...');
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        shiftDocRef = doc(db, 'stowTracker', 'currentShift');
+        recognitionsColRef = collection(db, 'recognitions');
+        ppeInvDocRef = doc(db, 'ppeInventory', 'jackets');
+        ppeCheckoutsColRef = collection(db, 'ppeCheckouts');
+
+        // 1. Stow Tracker Listener
+        onSnapshot(shiftDocRef, (snapshot) => {
+          state.aisles = snapshot.exists() && snapshot.data().aisles ? snapshot.data().aisles : {};
+          if (pendingWrites === 0) setSyncStatus('saved', 'Connected to Firestore');
+          renderAll();
+        }, () => setSyncStatus('error', 'Stow sync error'));
+
+        // 2. Recognitions Listener
+        onSnapshot(recognitionsColRef, (snapshot) => {
+          const todayKey = getShiftDateKey();
+          const allDocs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+          state.knownAssociates = [...new Set(allDocs.map((d) => d.associate).filter(Boolean))].sort();
+          state.recognitions = allDocs.filter((d) => d.shiftDate === todayKey).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+          refreshAssociateAutocomplete();
+          renderShoutouts();
+        });
+
+        // 3. PPE Inventory Listener
+        onSnapshot(ppeInvDocRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            if (data.cold && data.rain) {
+              state.ppeInventory = { cold: data.cold, rain: data.rain };
+            }
+          }
+          renderPpeAll();
+        });
+
+        // 4. PPE Checkouts Listener
+        onSnapshot(ppeCheckoutsColRef, (snapshot) => {
+          state.ppeCheckouts = snapshot.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (b.checkedOutAt || '').localeCompare(a.checkedOutAt || ''));
+          refreshAssociateAutocomplete();
+          renderPpeAll();
+        });
+      } catch (err) {
+        setSyncStatus('error', 'Firebase init failed');
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. TAB 3: JACKET PPE LOGIC & RENDERING
+    // -----------------------------------------------------------------------
+    function getPpeCounts(type, size) {
+      const slot = (state.ppeInventory[type] && state.ppeInventory[type][size]) || { total: 0, wash: 0 };
+      const out = state.ppeCheckouts.filter(
+        (c) => c.type === type && c.size === size && (c.status === 'out' || c.status === 'followup')
+      ).length;
+      const avail = Math.max(0, slot.total - slot.wash - out);
+      return { total: slot.total, wash: slot.wash, out, avail };
+    }
+
+    function checkRepeatOffender(nameInput) {
+      const clean = nameInput.trim().toLowerCase();
+      if (!clean) {
+        elPpeRepeatWarning.classList.add('hidden');
+        return;
+      }
+      const openTasks = state.ppeCheckouts.filter(
+        (c) => c.status === 'followup' && (c.associate || '').toLowerCase() === clean
+      );
+      if (openTasks.length > 0) {
+        const items = openTasks.map((t) => `${t.type === 'cold' ? 'Cold' : 'Rain'} (${t.size}) from ${t.shiftDate}`).join(', ');
+        elPpeRepeatWarning.textContent = `Heads up: ${nameInput.trim()} still has ${openTasks.length} unreturned jacket(s): ${items}`;
+        elPpeRepeatWarning.classList.remove('hidden');
+      } else {
+        elPpeRepeatWarning.classList.add('hidden');
+      }
+    }
+
+    function renderPpeAll() {
+      const todayKey = getShiftDateKey();
+      const activeOut = state.ppeCheckouts.filter((c) => c.status === 'out');
+      const followUps = state.ppeCheckouts.filter((c) => c.status === 'followup');
+      const returnedToday = state.ppeCheckouts.filter((c) => c.status === 'returned' && c.shiftDate === todayKey);
+
+      // Summary totals
+      let coldAvail = 0, coldTotal = 0, rainAvail = 0, rainTotal = 0;
+      PPE_SIZES.forEach((sz) => {
+        const c = getPpeCounts('cold', sz);
+        const r = getPpeCounts('rain', sz);
+        coldAvail += c.avail; coldTotal += c.total;
+        rainAvail += r.avail; rainTotal += r.total;
+      });
+
+      elPpeStatColdAvail.textContent = coldAvail;
+      elPpeStatColdTotal.textContent = `/ ${coldTotal}`;
+      elPpeStatRainAvail.textContent = rainAvail;
+      elPpeStatRainTotal.textContent = `/ ${rainTotal}`;
+      elPpeStatOut.textContent = activeOut.length;
+      elPpeStatFollowups.textContent = followUps.length;
+      elTabBadgePpe.textContent = activeOut.length + followUps.length;
+
+      // Highlight tab badge in rose if there are open follow-ups
+      elTabBadgePpe.className = followUps.length > 0
+        ? 'px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-500 text-white'
+        : 'px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-200 text-slate-700';
+
+      // Render Size Pills for selected jacket type
+      elPpeSizePills.innerHTML = PPE_SIZES.map((sz) => {
+        const { avail } = getPpeCounts(state.selectedPpeType, sz);
+        const isSel = state.selectedPpeSize === sz;
+        let cls = 'min-h-[44px] px-2 py-1.5 rounded-xl border text-xs font-extrabold flex flex-col items-center justify-center transition active:scale-95 ';
+        if (isSel) {
+          cls += 'bg-slate-900 text-white border-slate-900 shadow-sm';
+        } else if (avail === 0) {
+          cls += 'bg-rose-50 text-rose-700 border-rose-200';
+        } else if (avail <= 2) {
+          cls += 'bg-amber-50 text-amber-800 border-amber-300';
+        } else {
+          cls += 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
+        }
+        return `<button type="button" data-ppe-size="${sz}" class="${cls}"><span>${sz}</span><span class="text-[10px] font-semibold opacity-80">${avail} left</span></button>`;
+      }).join('');
+
+      // Render Persistent Follow-Up Tasks
+      elPpeFollowupCount.textContent = followUps.length;
+      elPpeFollowupCard.classList.toggle('hidden', followUps.length === 0);
+      elPpeFollowupList.innerHTML = followUps.map((item) => {
+        const typeLabel = item.type === 'cold' ? 'Cold Weather' : 'Rain';
+        const stage = item.followUpStage || 'Pending';
+        return `
+          <div class="p-3.5 space-y-2.5 bg-rose-50/30">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-sm font-extrabold text-slate-900">${item.associate}</span>
+                <span class="ml-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800">${typeLabel} &bull; ${item.size}${item.tag ? ` &bull; ${item.tag}` : ''}</span>
+                <p class="text-[11px] text-slate-500 font-medium mt-0.5">Issued: ${item.shiftDate}</p>
+              </div>
+              <select data-followup-stage="${item.id}" class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-white text-xs font-bold text-slate-800">
+                <option value="Pending" ${stage === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Reminded" ${stage === 'Reminded' ? 'selected' : ''}>Reminded</option>
+                <option value="Escalated to AM/WHS" ${stage === 'Escalated to AM/WHS' ? 'selected' : ''}>Escalated to AM/WHS</option>
+              </select>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" data-ppe-return-good="${item.id}" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition">Returned (Good)</button>
+              <button type="button" data-ppe-return-wash="${item.id}" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition">Returned (Wash/Dmg)</button>
+              <button type="button" data-ppe-writeoff="${item.id}" class="ml-auto px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 active:scale-95 transition">Write Off</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Active Shift Checkouts
+      elPpeActiveCount.textContent = activeOut.length;
+      elPpeReturnedCount.textContent = returnedToday.length;
+      elPpeActiveEmpty.classList.toggle('hidden', activeOut.length > 0);
+      elPpeActiveList.innerHTML = activeOut.map((item) => {
+        const typeBadge = item.type === 'cold'
+          ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-100 text-sky-800">Cold</span>'
+          : '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800">Rain</span>';
+        return `
+          <div class="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-sm font-extrabold text-slate-900">${item.associate}</span>
+                ${typeBadge}
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">Size ${item.size}</span>
+                ${item.tag ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900">${item.tag}</span>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button type="button" data-ppe-return-good="${item.id}" class="flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition">Return (Good)</button>
+              <button type="button" data-ppe-return-wash="${item.id}" class="flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 active:scale-95 transition">Wash/Dmg</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Inventory Manager Grid
+      elPpeInvGrid.innerHTML = ['cold', 'rain'].map((type) => {
+        const title = type === 'cold' ? 'Cold Weather Jackets' : 'Rain Jackets';
+        const rows = PPE_SIZES.map((sz) => {
+          const { total, wash, out, avail } = getPpeCounts(type, sz);
+          return `
+            <div class="flex items-center justify-between gap-2 py-2 border-b border-slate-100 last:border-b-0 text-xs">
+              <div class="font-extrabold text-slate-800 w-10">${sz}</div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-500">Total:</span>
+                <button type="button" data-inv-adj="${type}:${sz}:total:-1" class="w-7 h-7 rounded-lg bg-slate-100 font-bold hover:bg-slate-200">-</button>
+                <span class="w-6 text-center font-extrabold">${total}</span>
+                <button type="button" data-inv-adj="${type}:${sz}:total:1" class="w-7 h-7 rounded-lg bg-slate-100 font-bold hover:bg-slate-200">+</button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-amber-700">Wash:</span>
+                <button type="button" data-inv-adj="${type}:${sz}:wash:-1" class="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold hover:bg-amber-100">-</button>
+                <span class="w-5 text-center font-extrabold text-amber-800">${wash}</span>
+                <button type="button" data-inv-adj="${type}:${sz}:wash:1" class="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold hover:bg-amber-100">+</button>
+              </div>
+              <div class="text-right font-bold ${avail === 0 ? 'text-rose-600' : 'text-emerald-700'} w-14">${avail} avail</div>
+            </div>
+          `;
+        }).join('');
+        return `<div><h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5">${title}</h4><div class="bg-slate-50/70 rounded-xl border border-slate-200 px-3">${rows}</div></div>`;
+      }).join('');
+
+      checkRepeatOffender(elPpeAssociate.value);
+    }
+
+    // PPE Event Handlers
+    elPpeAssociate.addEventListener('input', (e) => checkRepeatOffender(e.target.value));
+
+    document.querySelectorAll('.ppe-type-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.selectedPpeType = btn.getAttribute('data-ppe-type');
+        document.querySelectorAll('.ppe-type-btn').forEach((b) => {
+          const isSel = b.getAttribute('data-ppe-type') === state.selectedPpeType;
+          const color = state.selectedPpeType === 'cold' ? 'bg-sky-700 border-sky-800' : 'bg-indigo-700 border-indigo-800';
+          b.className = isSel
+            ? `ppe-type-btn min-h-[42px] px-3 py-2 rounded-xl text-xs font-extrabold border transition active:scale-95 text-white shadow-sm ${color}`
+            : 'ppe-type-btn min-h-[42px] px-3 py-2 rounded-xl text-xs font-extrabold border transition active:scale-95 bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
+        });
+        renderPpeAll();
+      });
+    });
+
+    elPpeSizePills.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-ppe-size]');
+      if (!btn) return;
+      state.selectedPpeSize = btn.getAttribute('data-ppe-size');
+      renderPpeAll();
+    });
+
+    elBtnPpeCheckout.addEventListener('click', async () => {
+      const associate = elPpeAssociate.value.trim();
+      const tag = elPpeTag.value.trim();
+      if (!associate) {
+        showToast('Enter an associate login or name', false);
+        elPpeAssociate.focus();
+        return;
+      }
+
+      const entry = {
+        associate,
+        type: state.selectedPpeType,
+        size: state.selectedPpeSize,
+        tag,
+        shiftDate: getShiftDateKey(),
+        status: 'out',
+        followUpStage: 'Pending',
+        returnCondition: null,
+        checkedOutAt: new Date().toISOString(),
+        returnedAt: null,
+      };
+
+      elPpeAssociate.value = '';
+      elPpeTag.value = '';
+      elPpeRepeatWarning.classList.add('hidden');
+
+      if (ppeCheckoutsColRef) {
+        try {
+          await addDoc(ppeCheckoutsColRef, entry);
+          showToast(`Issued ${entry.type === 'cold' ? 'Cold' : 'Rain'} (${entry.size}) to ${associate}`, false);
+        } catch (err) {
+          showToast('Error saving checkout — check Firestore rules', false);
+        }
+      } else {
+        state.ppeCheckouts.unshift({ id: String(Date.now()), ...entry });
+        renderPpeAll();
+      }
+    });
+
+    async function handlePpeReturn(id, condition) {
+      const item = state.ppeCheckouts.find((c) => c.id === id);
+      if (!item) return;
+
+      if (condition === 'wash') {
+        state.ppeInventory[item.type][item.size].wash += 1;
+        await savePpeInventoryToCloud();
+      }
+
+      if (db && ppeCheckoutsColRef) {
+        try {
+          await updateDoc(doc(db, 'ppeCheckouts', id), {
+            status: 'returned',
+            returnCondition: condition,
+            returnedAt: new Date().toISOString(),
+          });
+          showToast(condition === 'wash' ? 'Returned & flagged for Wash/Damage' : 'Jacket returned (Good)', false);
+        } catch (err) {
+          showToast('Could not update return status', false);
+        }
+      } else {
+        item.status = 'returned';
+        item.returnCondition = condition;
+        renderPpeAll();
+      }
+    }
+
+    // Delegated clicks for Active & Follow-Up PPE lists
+    document.getElementById('tab-ppe').addEventListener('click', async (e) => {
+      const btnGood = e.target.closest('[data-ppe-return-good]');
+      if (btnGood) return handlePpeReturn(btnGood.getAttribute('data-ppe-return-good'), 'good');
+
+      const btnWash = e.target.closest('[data-ppe-return-wash]');
+      if (btnWash) return handlePpeReturn(btnWash.getAttribute('data-ppe-return-wash'), 'wash');
+
+      const btnWriteOff = e.target.closest('[data-ppe-writeoff]');
+      if (btnWriteOff) {
+        const id = btnWriteOff.getAttribute('data-ppe-writeoff');
+        if (db && ppeCheckoutsColRef) {
+          await updateDoc(doc(db, 'ppeCheckouts', id), { status: 'written_off', returnedAt: new Date().toISOString() });
+          showToast('Marked as written off', false);
+        }
+        return;
+      }
+
+      const btnInv = e.target.closest('[data-inv-adj]');
+      if (btnInv) {
+        const [type, sz, field, deltaStr] = btnInv.getAttribute('data-inv-adj').split(':');
+        const delta = parseInt(deltaStr, 10);
+        const cur = state.ppeInventory[type][sz][field];
+        state.ppeInventory[type][sz][field] = Math.max(0, cur + delta);
+        renderPpeAll();
+        await savePpeInventoryToCloud();
+      }
+    });
+
+    // Follow-up stage dropdown change
+    elPpeFollowupList.addEventListener('change', async (e) => {
+      const sel = e.target.closest('[data-followup-stage]');
+      if (!sel) return;
+      const id = sel.getAttribute('data-followup-stage');
+      if (db && ppeCheckoutsColRef) {
+        await updateDoc(doc(db, 'ppeCheckouts', id), { followUpStage: sel.value });
+        showToast(`Follow-up updated to ${sel.value}`, false);
+      }
+    });
+
+    // End Shift & Flag Unreturned
+    elBtnPpeEndShift.addEventListener('click', async () => {
+      const activeOut = state.ppeCheckouts.filter((c) => c.status === 'out');
+      if (activeOut.length === 0) {
+        showToast('All jackets are already returned!', false);
+        return;
+      }
+      if (!confirm(`Move ${activeOut.length} unreturned jacket(s) to Open Follow-Up Tasks?`)) return;
+
+      for (const item of activeOut) {
+        if (db && ppeCheckoutsColRef) {
+          await updateDoc(doc(db, 'ppeCheckouts', item.id), { status: 'followup', followUpStage: 'Pending' });
+        } else {
+          item.status = 'followup';
+        }
+      }
+      renderPpeAll();
+      showToast(`Flagged ${activeOut.length} unreturned jacket(s) for follow-up`, false);
+    });
+
+    // Copy PPE Summary
+    elBtnPpeCopy.addEventListener('click', async () => {
+      const dateStr = getShiftDateKey();
+      const activeOut = state.ppeCheckouts.filter((c) => c.status === 'out');
+      const followUps = state.ppeCheckouts.filter((c) => c.status === 'followup');
+      const returnedToday = state.ppeCheckouts.filter((c) => c.status === 'returned' && c.shiftDate === dateStr);
+
+      let washCount = 0;
+      const lowStock = [];
+      ['cold', 'rain'].forEach((t) => {
+        PPE_SIZES.forEach((sz) => {
+          const { avail, wash } = getPpeCounts(t, sz);
+          washCount += wash;
+          if (avail <= 2) lowStock.push(`${t === 'cold' ? 'Cold' : 'Rain'} ${sz} (${avail} left)`);
+        });
+      });
+
+      const lines = [
+        `Cold Weather & Rain Jacket PPE Summary — ${dateStr}`,
+        `Returned Today: ${returnedToday.length} | Still Out: ${activeOut.length} | Open Follow-Ups: ${followUps.length}`,
+        `Needs Wash / Damaged: ${washCount}`,
+        `Low Stock Alerts: ${lowStock.length ? lowStock.join(', ') : 'None'}`,
+      ];
+
+      if (followUps.length > 0) {
+        lines.push('\nOpen Follow-Up Tasks:');
+        followUps.forEach((f) => {
+          lines.push(`• @${f.associate} — ${f.type === 'cold' ? 'Cold' : 'Rain'} (${f.size})${f.tag ? ` [${f.tag}]` : ''} from ${f.shiftDate} [${f.followUpStage || 'Pending'}]`);
+        });
+      }
+
+      const text = lines.join('\n');
+      const copied = await copyTextToClipboard(text);
+      if (copied) showToast('PPE summary copied for Slack/Chime!', false);
+      else openSummaryModal(text);
+    });
+
+    // Toggle Inventory Manager
+    elBtnToggleInv.addEventListener('click', () => {
+      const isHidden = elPpeInvPanel.classList.toggle('hidden');
+      elInvChevron.classList.toggle('-rotate-90', isHidden);
+    });
+
+    // -----------------------------------------------------------------------
+    // 7. TAB 2: SHOUTOUTS LOGIC & RENDERING
+    // -----------------------------------------------------------------------
+    function renderShoutouts() {
+      const logs = state.recognitions;
+      elSoTotalCount.textContent = logs.length;
+      elTabBadgeShoutouts.textContent = logs.length;
+
+      if (logs.length === 0) {
+        elSoLogList.innerHTML = '';
+        elSoEmptyState.classList.remove('hidden');
+        return;
+      }
+
+      elSoEmptyState.classList.add('hidden');
+      elSoLogList.innerHTML = logs.map((log) => {
+        const behaviorBadges = (log.behaviors || []).map((b) => `<span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">${b}</span>`).join(' ');
+        return `
+          <div class="px-4 py-3 flex items-start justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-extrabold text-slate-900">${log.associate}</span>
+                <span class="text-[11px] font-semibold text-slate-500">${log.zone} &bull; ${log.phase}</span>
+              </div>
+              <div class="flex flex-wrap gap-1">${behaviorBadges}</div>
+              ${log.note ? `<p class="text-xs text-slate-600 italic">"${log.note}"</p>` : ''}
+            </div>
+            <button type="button" data-delete-so="${log.id}" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    elSoBehaviorChips.addEventListener('click', (e) => {
+      const chip = e.target.closest('.so-chip');
+      if (!chip) return;
+      const isSelected = chip.classList.toggle('selected');
+      chip.className = isSelected
+        ? 'so-chip selected min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border bg-slate-900 text-white border-slate-900 shadow-sm active:scale-95 transition'
+        : 'so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition';
+    });
+
+    elBtnSaveShoutout.addEventListener('click', async () => {
+      const associate = elSoAssociate.value.trim();
+      const behaviors = Array.from(elSoBehaviorChips.querySelectorAll('.so-chip.selected')).map((c) => c.getAttribute('data-behavior'));
+      if (!associate) { showToast('Enter an associate login or name first', false); return elSoAssociate.focus(); }
+      if (behaviors.length === 0) return showToast('Tap at least one safe behavior', false);
+
+      const entry = {
+        associate, behaviors, zone: elSoZone.value, phase: elSoPhase.value,
+        note: elSoNote.value.trim(), shiftDate: getShiftDateKey(), timestamp: new Date().toISOString(),
+      };
+
+      elSoAssociate.value = '';
+      elSoNote.value = '';
+      elSoBehaviorChips.querySelectorAll('.so-chip.selected').forEach((chip) => {
+        chip.className = 'so-chip min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 active:scale-95 transition';
+      });
+
+      if (recognitionsColRef) {
+        try {
+          await addDoc(recognitionsColRef, entry);
+          showToast(`Saved shoutout for ${associate}!`, false);
+        } catch (err) { showToast('Error saving recognition to cloud', false); }
+      } else {
+        state.recognitions.unshift({ id: String(Date.now()), ...entry });
+        renderShoutouts();
+      }
+    });
+
+    elSoLogList.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-delete-so]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-delete-so');
+      if (db && recognitionsColRef) {
+        await deleteDoc(doc(db, 'recognitions', id));
+        showToast('Recognition removed', false);
+      } else {
+        state.recognitions = state.recognitions.filter((r) => r.id !== id);
+        renderShoutouts();
+      }
+    });
+
+    async function handleShoutoutCopy(mode) {
+      if (state.recognitions.length === 0) return showToast('No recognitions logged yet tonight', false);
+      const dateStr = getShiftDateKey();
+      let text = '';
+      if (mode === 'slack') {
+        text = `Safety Shoutouts — Shift ${dateStr}\nHuge thanks to these associates keeping the floor safe tonight:\n` +
+          state.recognitions.map((l) => `• @${l.associate} (${l.zone}, ${l.phase}) — ${(l.behaviors || []).join(' & ')}${l.note ? ` (${l.note})` : ''}`).join('\n');
+      } else {
+        const counts = {};
+        state.recognitions.forEach((l) => (l.behaviors || []).forEach((b) => { counts[b] = (counts[b] || 0) + 1; }));
+        const breakdown = Object.entries(counts).map(([k, v]) => `${k}: ${v}`).join(' | ');
+        const names = [...new Set(state.recognitions.map((l) => l.associate))].join(', ');
+        text = `WHS Positive Safety Engagements — ${dateStr} (Total: ${state.recognitions.length})\n• ${breakdown}\n• Associates Recognized: ${names}`;
+      }
+      const copied = await copyTextToClipboard(text);
+      if (copied) showToast(`Copied ${mode === 'slack' ? 'Slack/Chime' : 'WHS'} shoutouts!`, false);
+      else openSummaryModal(text);
+    }
+
+    elBtnCopySoSlack.addEventListener('click', () => handleShoutoutCopy('slack'));
+    elBtnCopySoWhs.addEventListener('click', () => handleShoutoutCopy('whs'));
+
+    // -----------------------------------------------------------------------
+    // 8. TAB 1: STOW TRACKER LOGIC & RENDERING
+    // -----------------------------------------------------------------------
+    function getAisleState(key) {
+      return state.aisles[key] || { cart: false, bin: false, declined: false };
+    }
+
+    function isAisleMissing(aisle) {
+      const s = getAisleState(aisle.key);
+      return (aisle.required && !s.cart && !s.declined) || (s.cart && !s.bin);
+    }
+
+    function calculateMetrics() {
+      let totalRequired = 0, requiredCompliant = 0, missingCarts = 0, missingBins = 0, extraP2bCarts = 0;
+      CLUSTERS.forEach((cluster) => {
+        cluster.aisles.forEach((aisle) => {
+          const s = getAisleState(aisle.key);
+          if (cluster.required) {
+            totalRequired++;
+            if ((s.cart && s.bin) || s.declined) requiredCompliant++;
+            if (!s.cart && !s.declined) missingCarts++;
+          } else if (s.cart) extraP2bCarts++;
+          if (s.cart && !s.bin) missingBins++;
+        });
+      });
+      return { totalRequired, requiredCompliant, missingCarts, missingBins, extraP2bCarts };
+    }
+
+    function generateShiftSummary() {
+      const m = calculateMetrics();
+      const pct = m.totalRequired > 0 ? Math.round((m.requiredCompliant / m.totalRequired) * 100) : 0;
+      const missingCartList = [], missingBinList = [], declinedList = [], p2bExtraList = [];
+      CLUSTERS.forEach((cluster) => {
+        cluster.aisles.forEach((aisle) => {
+          const s = getAisleState(aisle.key);
+          if (cluster.required) {
+            if (s.declined) declinedList.push(aisle.label);
+            else if (!s.cart) missingCartList.push(aisle.label);
+          } else if (s.cart) p2bExtraList.push(aisle.label);
+          if (s.cart && !s.bin) missingBinList.push(aisle.label);
+        });
+      });
+      const timestamp = new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+      const fmt = (arr) => (arr.length > 0 ? arr.join(', ') : 'None');
+      return [
+        `Safety Champion — Stow Cart & Jiffy Bin Audit (${timestamp})`,
+        `Required Compliance: ${m.requiredCompliant}/${m.totalRequired} (${pct}%)`,
+        `Missing Carts (${missingCartList.length}): ${fmt(missingCartList)}`,
+        `Missing Jiffy Bins (${missingBinList.length}): ${fmt(missingBinList)}`,
+        `Declined by Associate (${declinedList.length}): ${fmt(declinedList)}`,
+        `P2B Extra Carts (B & A) (${p2bExtraList.length}): ${fmt(p2bExtraList)}`,
+      ].join('\n');
+    }
+
+    function renderDashboard() {
+      const m = calculateMetrics();
+      const pct = m.totalRequired > 0 ? Math.round((m.requiredCompliant / m.totalRequired) * 100) : 0;
+      elStatCompliant.textContent = m.requiredCompliant;
+      elStatRequiredTotal.textContent = `/ ${m.totalRequired}`;
+      elStatCompliantPct.textContent = `${pct}%`;
+      elTabBadgeStow.textContent = `${pct}%`;
+      elStatMissingCarts.textContent = m.missingCarts;
+      elStatMissingBins.textContent = m.missingBins;
+      elStatP2bCarts.textContent = m.extraP2bCarts;
+      elComplianceBar.style.width = `${pct}%`;
+    }
+
+    function renderFilterBar() {
+      const pillOptions = ['ALL', ...CLUSTERS.map((c) => c.id)];
+      elClusterPills.innerHTML = pillOptions.map((opt) => {
+        const isActive = state.activeCluster === opt;
+        const clusterObj = CLUSTERS.find((c) => c.id === opt);
+        const isOptional = clusterObj && !clusterObj.required;
+        let classes = 'shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 border ';
+        classes += isActive
+          ? (isOptional ? 'bg-sky-600 text-white border-sky-600 shadow-sm' : 'bg-slate-900 text-white border-slate-900 shadow-sm')
+          : (isOptional ? 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100');
+        return `<button type="button" data-filter-cluster="${opt}" class="${classes}">${opt === 'ALL' ? 'All' : opt}</button>`;
+      }).join('');
+
+      elBtnMissingOnly.setAttribute('aria-pressed', String(state.missingOnly));
+      elBtnMissingOnly.className = state.missingOnly
+        ? 'shrink-0 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 bg-amber-500 text-white border-amber-600 shadow-sm'
+        : 'shrink-0 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200';
+    }
+
+    function buildAisleRowHTML(aisle) {
+      const s = getAisleState(aisle.key);
+      const needsBin = s.cart && !s.bin;
+      let borderClass = 'border-l-slate-300', rowBgClass = 'bg-white', statusSubtext = '';
+
+      if (aisle.required) {
+        if (s.declined) { borderClass = 'border-l-emerald-500'; rowBgClass = 'bg-slate-50/90'; statusSubtext = '<span class="text-[11px] font-semibold text-purple-700 bg-purple-100/80 px-1.5 py-0.5 rounded-md">Opt-Out</span>'; }
+        else if (s.cart && s.bin) { borderClass = 'border-l-emerald-500'; rowBgClass = 'bg-emerald-50/25'; statusSubtext = '<span class="text-[11px] font-semibold text-emerald-700">Ready</span>'; }
+        else if (needsBin) { borderClass = 'border-l-amber-500'; rowBgClass = 'bg-amber-50/40'; statusSubtext = '<span class="text-[11px] font-bold text-amber-700">Needs Bin</span>'; }
+        else { borderClass = 'border-l-rose-500'; statusSubtext = '<span class="text-[11px] font-semibold text-rose-600">Needs Cart</span>'; }
+      } else {
+        if (needsBin) { borderClass = 'border-l-amber-500'; rowBgClass = 'bg-amber-50/40'; statusSubtext = '<span class="text-[11px] font-bold text-amber-700">Needs Bin</span>'; }
+        else if (s.cart && s.bin) { borderClass = 'border-l-emerald-500'; rowBgClass = 'bg-sky-50/30'; statusSubtext = '<span class="text-[11px] font-semibold text-emerald-700">Extra Ready</span>'; }
+        else { borderClass = 'border-l-sky-400'; statusSubtext = '<span class="text-[11px] font-medium text-sky-600">Optional</span>'; }
+      }
+
+      const cartBtnClass = s.cart ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-300 hover:bg-slate-100';
+      const binBtnClass = s.bin ? 'bg-teal-600 text-white border-teal-700 shadow-sm' : (needsBin ? 'bg-amber-50 text-amber-900 border-2 border-amber-500 shadow-xs ring-2 ring-amber-200/70' : 'bg-slate-50 text-slate-600 border-slate-300 hover:bg-slate-100');
+      const declinedBtnHTML = aisle.required ? `<button type="button" data-action="toggle-declined" data-key="${aisle.key}" class="min-h-[44px] px-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1 transition active:scale-95 ${s.declined ? 'bg-purple-600 text-white border-purple-700 shadow-sm' : 'bg-slate-50 text-slate-500 border-slate-300 hover:bg-slate-100'}"><span>Declined</span></button>` : '';
+
+      return `
+        <div class="border-l-[6px] ${borderClass} ${rowBgClass} px-3 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 last:border-b-0 transition-colors">
+          <div class="flex items-center justify-between sm:justify-start gap-2.5 min-w-[115px]">
+            <span class="text-sm sm:text-base font-extrabold tracking-tight ${s.declined ? 'text-slate-500' : 'text-slate-900'}">${aisle.label}</span>
+            ${statusSubtext}
+          </div>
+          <div class="grid ${aisle.required ? 'grid-cols-3' : 'grid-cols-2'} sm:flex items-center gap-2 w-full sm:w-auto">
+            <button type="button" data-action="toggle-cart" data-key="${aisle.key}" class="min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 transition active:scale-95 ${cartBtnClass}"><span>Cart</span></button>
+            <button type="button" data-action="toggle-bin" data-key="${aisle.key}" class="min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 transition active:scale-95 ${binBtnClass}"><span>Jiffy Bin</span></button>
+            ${declinedBtnHTML}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderClusters() {
+      const visibleClusters = CLUSTERS.filter((c) => state.activeCluster === 'ALL' || state.activeCluster === c.id);
+      let renderedSections = 0;
+      const htmlParts = [];
+
+      visibleClusters.forEach((cluster) => {
+        const filteredAisles = state.missingOnly ? cluster.aisles.filter((a) => isAisleMissing(a)) : cluster.aisles;
+        if (state.missingOnly && filteredAisles.length === 0) return;
+        renderedSections++;
+
+        const totalAisles = cluster.aisles.length;
+        let readyCount = 0, extraCartsCount = 0, clusterMissingBins = 0;
+        cluster.aisles.forEach((a) => {
+          const s = getAisleState(a.key);
+          if (cluster.required) { if ((s.cart && s.bin) || s.declined) readyCount++; }
+          else if (s.cart) extraCartsCount++;
+          if (s.cart && !s.bin) clusterMissingBins++;
+        });
+
+        const isCollapsed = Boolean(state.collapsed[cluster.id]) && !state.missingOnly;
+        const headerBg = cluster.required ? 'bg-slate-800 text-white' : 'bg-sky-900 text-white';
+        const badgeHTML = cluster.required
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30">Required</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-400/20 text-sky-200 border border-sky-300/30">P2B Optional</span>';
+        const progressBadgeHTML = cluster.required
+          ? `<span class="px-2.5 py-1 rounded-lg text-xs font-bold ${readyCount === totalAisles ? 'bg-emerald-500 text-white' : 'bg-white/15 text-white'}">${readyCount}/${totalAisles} Ready</span>`
+          : `<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/15 text-sky-100">${extraCartsCount} Extra</span>`;
+        const missingBinAlertHTML = clusterMissingBins > 0 ? `<span class="px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-400 text-slate-950">${clusterMissingBins} No Bin</span>` : '';
+        const quickActionBarHTML = cluster.required && !isCollapsed
+          ? `<div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-2"><span class="text-[11px] font-medium text-slate-500">Quick action for Cluster ${cluster.id}:</span><button type="button" data-action="mark-all-cluster" data-cluster="${cluster.id}" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 active:scale-95 transition">Mark All Cart + Bin</button></div>`
+          : '';
+
+        htmlParts.push(`
+          <section class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div data-action="toggle-collapse" data-cluster="${cluster.id}" role="button" tabindex="0" class="${headerBg} px-3.5 py-3 flex items-center justify-between gap-2 cursor-pointer select-none">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-xl ${cluster.required ? 'bg-white/15' : 'bg-sky-500/30'} flex items-center justify-center text-lg font-extrabold shrink-0">${cluster.id}</div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap"><h2 class="text-sm sm:text-base font-extrabold tracking-tight">Cluster ${cluster.id}</h2>${badgeHTML}</div>
+                  <p class="text-[11px] text-slate-300 font-medium">Racks 1&ndash;${cluster.racks} &bull; ${totalAisles} Aisles</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">${missingBinAlertHTML}${progressBadgeHTML}</div>
+            </div>
+            ${isCollapsed ? '' : `${quickActionBarHTML}<div class="divide-y divide-slate-100">${filteredAisles.map((a) => buildAisleRowHTML(a)).join('')}</div>`}
+          </section>
+        `);
+      });
+
+      elClustersContainer.innerHTML = htmlParts.join('');
+      elEmptyState.classList.toggle('hidden', renderedSections !== 0);
+    }
+
+    function renderAll() { renderDashboard(); renderFilterBar(); renderClusters(); }
+
+    // Stow & Modal Event Listeners
+    elClusterPills.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-filter-cluster]');
+      if (!btn) return;
+      state.activeCluster = btn.getAttribute('data-filter-cluster');
+      renderAll();
+    });
+    elBtnMissingOnly.addEventListener('click', () => { state.missingOnly = !state.missingOnly; renderAll(); });
+    elBtnClearFilters.addEventListener('click', () => { state.activeCluster = 'ALL'; state.missingOnly = false; renderAll(); });
+    elClustersContainer.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-action]');
+      if (!target) return;
+      const action = target.getAttribute('data-action');
+      if (action === 'toggle-collapse') {
+        const cid = target.getAttribute('data-cluster');
+        state.collapsed[cid] = !state.collapsed[cid];
+        saveState(false);
+        return renderClusters();
+      }
+      if (action === 'mark-all-cluster') {
+        const cid = target.getAttribute('data-cluster');
+        const cluster = CLUSTERS.find((c) => c.id === cid);
+        if (!cluster) return;
+        previousAislesSnapshot = JSON.parse(JSON.stringify(state.aisles));
+        cluster.aisles.forEach((a) => { if (!getAisleState(a.key).declined) state.aisles[a.key] = { cart: true, bin: true, declined: false }; });
+        saveState(); renderAll();
+        return showToast(`Cluster ${cid} marked Cart + Bin`, true);
+      }
+      const key = target.getAttribute('data-key');
+      if (!key) return;
+      const cur = { ...getAisleState(key) };
+      if (action === 'toggle-cart') { cur.cart = !cur.cart; if (cur.cart) cur.declined = false; }
+      else if (action === 'toggle-bin') { cur.bin = !cur.bin; if (cur.bin) cur.declined = false; }
+      else if (action === 'toggle-declined') { cur.declined = !cur.declined; if (cur.declined) { cur.cart = false; cur.bin = false; } }
+      state.aisles[key] = cur;
+      saveState(); renderAll();
+    });
+
+    elToastUndo.addEventListener('click', () => {
+      if (previousAislesSnapshot) {
+        state.aisles = previousAislesSnapshot; previousAislesSnapshot = null;
+        saveState(); renderAll(); showToast('Action undone', false);
+      }
+    });
+    elBtnDismissBanner.addEventListener('click', () => elConfigBanner.classList.add('hidden'));
+    elBtnResetShift.addEventListener('click', () => { elResetModal.classList.remove('hidden'); elResetModal.classList.add('flex'); });
+    elBtnCancelReset.addEventListener('click', () => { elResetModal.classList.add('hidden'); elResetModal.classList.remove('flex'); });
+    elBtnConfirmReset.addEventListener('click', () => {
+      previousAislesSnapshot = JSON.parse(JSON.stringify(state.aisles));
+      state.aisles = {}; saveState();
+      elResetModal.classList.add('hidden'); elResetModal.classList.remove('flex');
+      renderAll(); showToast('Shift checklist reset', true);
+    });
+    elBtnCopySummary.addEventListener('click', async () => {
+      const text = generateShiftSummary();
+      if (await copyTextToClipboard(text)) showToast('Shift summary copied for Slack/Chime!', false);
+      else openSummaryModal(text);
+    });
+    elBtnSelectSummary.addEventListener('click', () => { elSummaryTextarea.focus(); elSummaryTextarea.select(); });
+    elBtnCloseSummary.addEventListener('click', closeSummaryModal);
+    elBtnCloseSummaryX.addEventListener('click', closeSummaryModal);
+
+    // -----------------------------------------------------------------------
+    // 9. INITIALIZATION
+    // -----------------------------------------------------------------------
+    loadLocalState();
+    syncAutoPhaseUI();
+    renderAll();
+    renderShoutouts();
+    renderPpeAll();
+    initFirebaseSync();
+  </script>
+</body>
+</html>
