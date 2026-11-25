@@ -852,24 +852,40 @@
         });
 
         // 3. PPE Inventory Listener
-        onSnapshot(ppeInvDocRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const data = snapshot.data();
-            if (data.cold && data.rain) {
-              state.ppeInventory = { cold: data.cold, rain: data.rain };
+        onSnapshot(
+          ppeInvDocRef,
+          (snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.data();
+              if (data.cold && data.rain) {
+                state.ppeInventory = { cold: data.cold, rain: data.rain };
+              }
             }
+            renderPpeAll();
+          },
+          (err) => {
+            console.error('PPE Inventory sync error:', err);
+            setSyncStatus('error', 'PPE Inventory blocked — check Firestore rules');
+            showToast('PPE Inventory sync error — check Firestore rules', false);
           }
-          renderPpeAll();
-        });
+        );
 
         // 4. PPE Checkouts Listener
-        onSnapshot(ppeCheckoutsColRef, (snapshot) => {
-          state.ppeCheckouts = snapshot.docs
-            .map((d) => ({ id: d.id, ...d.data() }))
-            .sort((a, b) => (b.checkedOutAt || '').localeCompare(a.checkedOutAt || ''));
-          refreshAssociateAutocomplete();
-          renderPpeAll();
-        });
+        onSnapshot(
+          ppeCheckoutsColRef,
+          (snapshot) => {
+            state.ppeCheckouts = snapshot.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => (b.checkedOutAt || '').localeCompare(a.checkedOutAt || ''));
+            refreshAssociateAutocomplete();
+            renderPpeAll();
+          },
+          (err) => {
+            console.error('PPE Checkouts sync error:', err);
+            setSyncStatus('error', 'PPE Checkouts blocked — check Firestore rules');
+            showToast('PPE Checkouts sync error — check Firestore rules', false);
+          }
+        );
       } catch (err) {
         setSyncStatus('error', 'Firebase init failed');
       }
